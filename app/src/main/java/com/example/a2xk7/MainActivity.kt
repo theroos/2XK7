@@ -8,8 +8,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.SupabaseClientBuilder
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
@@ -30,9 +34,41 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        getClient()
+
 
         checkSupabaseConnection(this)
+    }
+
+    private fun getData(){
+        lifecycleScope.launch {
+            val client = getClient()
+            //val supabaseResponse = client.postgrest["cities"].select()
+        }
+    }
+
+    object SupabaseClientManager{
+        private const val SUPABASE_URL = "https://aaukmjyjnmgsbgrtwzho.supabase.co"
+        private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhdWttanlqbm1nc2JncnR3emhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2OTY4MTMsImV4cCI6MjA1MjI3MjgxM30.R6Y-P3L2LAwf9UtmolyRI2tUfwO0zpQvlT6HARO8r6Y"
+
+        //val client = SupabaseClient(SUPABASE_URL, SUPABASE_KEY)
+
+        val client: SupabaseClient = createSupabaseClient(
+            supabaseUrl = SUPABASE_URL,
+            supabaseKey = SUPABASE_KEY
+        ) {
+            install(Postgrest)
+        }
+
+        suspend fun getUsers(): List<Cities> {
+            return withContext(Dispatchers.IO) {
+                try {
+                    client.postgrest["cities"].select().decodeList<Cities>()
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            }
+        }
+
     }
 
     private fun getClient(){
@@ -64,3 +100,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+data class Cities(
+    val num: Int,
+    val cities: String,
+    val states: String
+)
